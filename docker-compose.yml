@@ -1,0 +1,145 @@
+services:
+
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    ports:
+        - 80:80
+        - 81:81
+    volumes:
+        - ./nginx_data:/data
+        - ./letsencrypt:/etc/letsencrypt
+    networks:
+        - seafile-net
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  db:
+    image: mariadb:10.11
+    container_name: seafile-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${SEAFILE_MYSQL_PW}  # Requested, set the root's password of MySQL service.
+      - MYSQL_LOG_CONSOLE=true
+    volumes:
+      - /mnt/seafile/db:/var/lib/mysql   # Requested, specifies the path to Seafile data persistent
+    networks:
+      - seafile-net
+    restart: unless-stopped
+  memcached:
+    image: memcached:1.6.18
+    container_name: seafile-memcached
+    entrypoint: memcached -m 256
+    networks:
+      - seafile-net
+    restart: unless-stopped
+  seafile:
+    image: seafileltd/seafile-mc:11.0-latest
+    container_name: seafile
+    volumes:
+      - /mnt/seafile/seafile_data:/shared   # Requested, specifies the path to Seafile data persistent store.
+    environment:
+      - DB_HOST=${SEAFILE_MYSQL_HOST}
+      - DB_ROOT_PASSWD=${SEAFILE_MYSQL_PW}  # Requested, the value should be root's password of MySQL service.
+      - TIME_ZONE=Europe/Tallinn  # Optional, default is UTC. Should be uncomment and set to your local time zone.
+      - SEAFILE_SERVER_LETSENCRYPT=false
+      - SEAFILE_SERVER_HOSTNAME=${SEAFILE_HOSTNAME} # Specifies your host name if https is enabled.
+    depends_on:
+      - db
+      - memcached
+    networks:
+      - seafile-net
+    restart: unless-stopped
+
+  jellyfin:
+    image: jellyfin/jellyfin
+    container_name: jellyfin
+    volumes:
+      - ./jellyfin/config:/config
+      - ./jellyfin/cache:/cache
+      - type: bind
+        source: /mnt/seafile/
+        target: /media
+    networks:
+      - seafile-net
+    restart: unless-stopped
+  
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:2.21.0
+    command: -H unix:///var/run/docker.sock
+    restart: unless-stopped
+    environment:
+      - VIRTUAL_HOST=${PORTAINER_HOSTNAME}
+      - VIRTUAL_PORT=9000
+    ports:
+      - 8000:8000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./portainer:/data
+    networks:
+      - seafile-net
+
+  audiobookshelf:
+    container_name: audiobookshelf-server
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    volumes:
+      - /mnt/seafile/BOOK:/audiobooks
+      - ./audiobookshelf/config:/config
+      - ./audiobookshelf/metadata:/metadata
+    networks:
+      - seafile-net
+    restart: unless-stopped
+
+  never-server:
+    image: nginx:latest
+    volumes:
+      - ./never:/usr/share/nginx/html
+    networks:
+      - seafile-net
+    restart: unless-stopped
+
+  yoga-server:
+    image: yoga-server:latest
+    networks:
+      - seafile-net
+    restart: unless-stopped
+
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    restart: unless-stopped
+    ports:
+        - 6081:10497
+        - 6081:10497/udp
+        - 6011:6011
+    cap_add:
+        - NET_ADMIN
+    devices:
+        - /dev/net/tun
+    volumes:
+        - ./gluetun:/gluetun
+    environment:
+        - VPN_SERVICE_PROVIDER=${WG_PROVIDER}
+        - VPN_TYPE=${WG_TYPE}
+        - WIREGUARD_PRIVATE_KEY=${WG_PRIVATE_KEY}
+        - WIREGUARD_ADDRESSES=${WG_ADDRESSES}
+        - WIREGUARD_PRESHARED_KEY=${WG_PRESHARED_KEY}
+        - SERVER_REGIONS=${WG_REGIONS}
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:4.6.7
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    restart: unless-stopped
+    volumes:
+        - ./qbittorrent:/config
+        - /mnt/seafile:/data # Ensure that the downloads folder is set to /data/downloads in qBittorrent
+    environment:
+        PUID: 1000
+        PGID: 1000
+        TZ: "Europe/Tallinn"
+        WEBUI_PORT: 6011
+
+networks:
+  seafile-net:
+
