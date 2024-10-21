@@ -49,6 +49,11 @@ services:
     networks:
       - seafile-net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ls /opt/seafile/seafile-data/ | grep . -q || exit 1"]
+      interval: 5m
+      timeout: 1m
+      retries: 5
 
   jellyfin:
     image: jellyfin/jellyfin
@@ -62,6 +67,11 @@ services:
     networks:
       - seafile-net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ls /media/ | grep . -q || exit 1"]
+      interval: 5m
+      timeout: 1m
+      retries: 5
   
   portainer:
     container_name: portainer
@@ -89,6 +99,12 @@ services:
     networks:
       - seafile-net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ls /audiobooks/ | grep . -q || exit 1"]
+      start_period: 5m
+      interval: 5m
+      timeout: 1m
+      retries: 5
 
   never-server:
     image: nginx:latest
@@ -139,6 +155,11 @@ services:
         PGID: 1000
         TZ: "Europe/Tallinn"
         WEBUI_PORT: 6011
+    healthcheck:
+      test: ["CMD-SHELL", "ls /data/ | grep . -q || exit 1"]
+      interval: 5m
+      timeout: 1m
+      retries: 5
 
 networks:
   seafile-net:
