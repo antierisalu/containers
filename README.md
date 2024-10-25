@@ -1,5 +1,6 @@
 ## Docker compose
 #### Nginx
+#### Autoheal
 #### Portainer 
 #### Seafile - cloud
 #### Jellyfin - Movies/TV
