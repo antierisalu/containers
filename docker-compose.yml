@@ -2,6 +2,7 @@ services:
 
   nginx-proxy-manager:
     image: jc21/nginx-proxy-manager:latest
+    container_name: nginx
     ports:
         - 80:80
         - 81:81
@@ -48,9 +49,9 @@ services:
       - memcached
     networks:
       - seafile-net
-    restart: unless-stopped
+    restart: always
     healthcheck:
-      test: ["CMD-SHELL", "ls /opt/seafile/seafile-data/ | grep . -q || exit 1"]
+      test: ["CMD-SHELL", "ls /opt/seafile/seafile-data/ > /dev/null || exit 1"]
       interval: 5m
       timeout: 1m
       retries: 5
@@ -66,12 +67,12 @@ services:
         target: /media
     networks:
       - seafile-net
-    restart: unless-stopped
+    restart: always
     healthcheck:
-      test: ["CMD-SHELL", "ls /media/ | grep . -q || exit 1"]
-      interval: 5m
-      timeout: 1m
-      retries: 5
+      test: ["CMD-SHELL", "ls /media/ > /dev/null || exit 1"]
+      interval: 1m
+      timeout: 30s
+      retries: 2
   
   portainer:
     container_name: portainer
@@ -98,9 +99,9 @@ services:
       - ./audiobookshelf/metadata:/metadata
     networks:
       - seafile-net
-    restart: unless-stopped
+    restart: always
     healthcheck:
-      test: ["CMD-SHELL", "ls /audiobooks/ | grep . -q || exit 1"]
+      test: ["CMD-SHELL", "ls /audiobooks/ > /dev/null || exit 1"]
       start_period: 5m
       interval: 5m
       timeout: 1m
@@ -108,6 +109,7 @@ services:
 
   never-server:
     image: nginx:latest
+    container_name: never-server
     volumes:
       - ./never:/usr/share/nginx/html
     networks:
@@ -116,6 +118,7 @@ services:
 
   yoga-server:
     image: yoga-server:latest
+    container_name: yoga
     networks:
       - seafile-net
     restart: unless-stopped
@@ -123,7 +126,7 @@ services:
   gluetun:
     image: qmcgaw/gluetun
     container_name: gluetun
-    restart: unless-stopped
+    restart: always
     ports:
         - 6081:10497
         - 6081:10497/udp
@@ -146,7 +149,7 @@ services:
     image: lscr.io/linuxserver/qbittorrent:4.6.7
     container_name: qbittorrent
     network_mode: "service:gluetun"
-    restart: unless-stopped
+    restart: always
     volumes:
         - ./qbittorrent:/config
         - /mnt/seafile:/data # Ensure that the downloads folder is set to /data/downloads in qBittorrent
@@ -156,10 +159,21 @@ services:
         TZ: "Europe/Tallinn"
         WEBUI_PORT: 6011
     healthcheck:
-      test: ["CMD-SHELL", "ls /data/ | grep . -q || exit 1"]
+      test: ["CMD-SHELL", "ls /data/ > /dev/null || exit 1"]
       interval: 5m
       timeout: 1m
       retries: 5
+
+  autoheal:
+    image: willfarrell/autoheal
+    container_name: autoheal
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - seafile-net
+    restart: always
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=all
 
 networks:
   seafile-net:
