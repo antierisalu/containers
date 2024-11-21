@@ -1,5 +1,65 @@
 services:
 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus_data:/prometheus
+    ports:
+      - 9099:9090
+    networks:
+      - seafile-net
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles' 
+    user: "1000"    
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - 8099:8080
+    networks:
+      - seafile-net
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - 9100:9100
+    networks:
+      - seafile-net
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
+
+
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    networks:
+      - seafile-net
+    volumes:
+      - ./grafana:/var/lib/grafana
+    user: "1000"    
+
   nginx-proxy-manager:
     image: jc21/nginx-proxy-manager:latest
     container_name: nginx
@@ -22,12 +82,12 @@ services:
       - MYSQL_ROOT_PASSWORD=${SEAFILE_MYSQL_PW}  # Requested, set the root's password of MySQL service.
       - MYSQL_LOG_CONSOLE=true
     volumes:
-      - /mnt/seafile/db:/var/lib/mysql   # Requested, specifies the path to Seafile data persistent
+      - /srv/db:/var/lib/mysql   # Requested, specifies the path to Seafile data persistent
     networks:
       - seafile-net
     restart: unless-stopped
   memcached:
-    image: memcached:1.6.18
+    image: memcached:1.6
     container_name: seafile-memcached
     entrypoint: memcached -m 256
     networks:
@@ -37,7 +97,7 @@ services:
     image: seafileltd/seafile-mc:11.0-latest
     container_name: seafile
     volumes:
-      - /mnt/seafile/seafile_data:/shared   # Requested, specifies the path to Seafile data persistent store.
+      - /srv/seafile_data:/shared   # Requested, specifies the path to Seafile data persistent store.
     environment:
       - DB_HOST=${SEAFILE_MYSQL_HOST}
       - DB_ROOT_PASSWD=${SEAFILE_MYSQL_PW}  # Requested, the value should be root's password of MySQL service.
@@ -52,9 +112,9 @@ services:
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "ls /opt/seafile/seafile-data/ > /dev/null || exit 1"]
-      interval: 5m
+      interval: 60m
       timeout: 1m
-      retries: 5
+      retries: 3
 
   jellyfin:
     image: jellyfin/jellyfin
@@ -63,15 +123,15 @@ services:
       - ./jellyfin/config:/config
       - ./jellyfin/cache:/cache
       - type: bind
-        source: /mnt/seafile/
+        source: /srv/
         target: /media
     networks:
       - seafile-net
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "ls /media/ > /dev/null || exit 1"]
-      interval: 1m
-      timeout: 30s
+      test: ["CMD-SHELL", "ls /media/MOVIE | grep . > /dev/null || exit 1"]
+      interval: 60m
+      timeout: 10s
       retries: 2
   
   portainer:
@@ -91,21 +151,20 @@ services:
       - seafile-net
 
   audiobookshelf:
-    container_name: audiobookshelf-server
+    container_name: audiobookshelf
     image: ghcr.io/advplyr/audiobookshelf:latest
     volumes:
-      - /mnt/seafile/BOOK:/audiobooks
+      - /srv/BOOK:/audiobooks
       - ./audiobookshelf/config:/config
       - ./audiobookshelf/metadata:/metadata
     networks:
       - seafile-net
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "ls /audiobooks/ > /dev/null || exit 1"]
-      start_period: 5m
-      interval: 5m
-      timeout: 1m
-      retries: 5
+      test: ["CMD-SHELL", "ls /audiobooks/ | grep . > /dev/null || exit 1"]
+      interval: 60m
+      timeout: 1s
+      retries: 3
 
   never-server:
     image: nginx:latest
@@ -117,8 +176,11 @@ services:
     restart: unless-stopped
 
   yoga-server:
-    image: yoga-server:latest
     container_name: yoga
+    build:
+      context: ./yoga/js/.
+      dockerfile: ./Dockerfile
+    image: yoga-server:js
     networks:
       - seafile-net
     restart: unless-stopped
@@ -144,25 +206,30 @@ services:
         - WIREGUARD_ADDRESSES=${WG_ADDRESSES}
         - WIREGUARD_PRESHARED_KEY=${WG_PRESHARED_KEY}
         - SERVER_REGIONS=${WG_REGIONS}
+    healthcheck:
+      test: ["CMD-SHELL", "/gluetun-entrypoint healthcheck"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
 
   qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:4.6.7
+    image: lscr.io/linuxserver/qbittorrent:5.0.1
     container_name: qbittorrent
     network_mode: "service:gluetun"
     restart: always
     volumes:
         - ./qbittorrent:/config
-        - /mnt/seafile:/data # Ensure that the downloads folder is set to /data/downloads in qBittorrent
+        - /srv:/data # Ensure that the downloads folder is set to /data/downloads in qBittorrent
     environment:
         PUID: 1000
         PGID: 1000
         TZ: "Europe/Tallinn"
         WEBUI_PORT: 6011
     healthcheck:
-      test: ["CMD-SHELL", "ls /data/ > /dev/null || exit 1"]
-      interval: 5m
-      timeout: 1m
-      retries: 5
+      test: ["CMD-SHELL", "curl -sSf google.com > /dev/null || exit 1"]
+      interval: 60m
+      timeout: 5m
+      retries: 3
 
   autoheal:
     image: willfarrell/autoheal
@@ -174,7 +241,6 @@ services:
     restart: always
     environment:
       - AUTOHEAL_CONTAINER_LABEL=all
-
+      - AUTOHEAL_INTERVAL=300
 networks:
   seafile-net:
-
