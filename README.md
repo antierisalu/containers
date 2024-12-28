@@ -6,6 +6,7 @@
 #### Nginx
 #### Autoheal
 #### Portainer 
+#### Home Assistant
 #### Seafile - cloud
 #### Jellyfin - Movies/TV
 #### Audiobookshelf
