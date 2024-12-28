@@ -6,7 +6,7 @@
 #### Nginx
 #### Autoheal
 #### Portainer 
-#### Home Assistant
+#### Home Assistant - Water heater w/ nordpool cheapest hours and lights automations
 #### Seafile - cloud
 #### Jellyfin - Movies/TV
 #### Audiobookshelf
