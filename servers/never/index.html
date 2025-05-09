@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>🧩</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="icon" type="image/svg+xml" sizes="any" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔮</text></svg>"/>
+</head>
+
+<body onclick="playVideo()">
+    <h1>Never gonna
+        <span>
+            <span>give you up</span><span>let you down</span>
+            <span>turn around</span><span>and hurt you</span>
+            <span>give you up</span>
+        </span>
+    </h1>
+    <style>
+        @keyframes animateWords {
+    0%   { transform: translateY(0); }
+    25%  { transform: translateY(-100%); }
+    50%  { transform: translateY(-200%); }
+    75%  { transform: translateY(-300%); }
+    100% { transform: translateY(-400%); }
+}
+
+h1 {
+    font-size: 3em;
+}
+
+h1 span {
+    position: relative;
+    display: inline-block;
+    color: #FFC312;
+    height: 1.25em;
+    vertical-align: bottom;
+    overflow: hidden;
+}
+
+h1 span span {
+    display: block;
+    animation: animateWords 10s infinite ease;
+    animation-iteration-count: infinite;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    padding: .2em;
+    background-color: #49070a;
+    color: white;
+    font-family: 'Geologica', sans-serif;
+}
+
+@media (max-width: 600px) {
+    h1 {
+        text-align: center;
+    }
+}
+
+    </style>
+    <iframe id="video" width="0" height="0" src="https://www.youtube.com/embed/dQw4w9WgXcQ?start=43" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+
+    <script>
+        function playVideo() {
+            var video = document.getElementById("video");
+            video.src += "&autoplay=1";
+        }
+    </script>
+    </script>
+</body>
+
+</html>

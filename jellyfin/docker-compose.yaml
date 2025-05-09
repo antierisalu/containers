@@ -1,0 +1,25 @@
+services:
+
+  jellyfin:
+    image: jellyfin/jellyfin
+    container_name: jellyfin
+    volumes:
+      - ./config:/config
+      - ./cache:/cache
+      - type: bind
+        source: /srv/
+        target: /media
+    networks:
+      - media-net
+    expose:
+     - 8096
+    restart: always
+    group_add:
+      - "993"
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    healthcheck:
+      test: ["CMD-SHELL", "ls /media/MOVIE | grep . > /dev/null || exit 1"]
+      interval: 60m
+      timeout: 10s
+      retries: 2

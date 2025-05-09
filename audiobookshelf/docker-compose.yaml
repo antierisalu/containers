@@ -1,0 +1,17 @@
+services:
+
+  audiobookshelf:
+    container_name: audiobookshelf
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    volumes:
+      - /srv/BOOK:/audiobooks
+      - ./config:/config
+      - ./metadata:/metadata
+    networks:
+      - media-net
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "ls /audiobooks/ | grep . > /dev/null || exit 1"]
+      interval: 60m
+      timeout: 1s
+      retries: 3

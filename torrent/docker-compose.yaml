@@ -1,0 +1,57 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    restart: always
+    ports:
+        - 6081:10497
+        - 6081:10497/udp
+        - 6011:6011
+    cap_add:
+        - NET_ADMIN
+    devices:
+        - /dev/net/tun
+    volumes:
+        - ./gluetun:/gluetun
+    environment:
+        - VPN_SERVICE_PROVIDER=${WG_PROVIDER}
+        - VPN_TYPE=${WG_TYPE}
+        - WIREGUARD_PRIVATE_KEY=${WG_PRIVATE_KEY}
+        - WIREGUARD_ADDRESSES=${WG_ADDRESSES}
+        - WIREGUARD_PRESHARED_KEY=${WG_PRESHARED_KEY}
+        - SERVER_REGIONS=${WG_REGIONS}
+        - TZ="Europe/Tallinn"
+    healthcheck:
+      test: ["CMD-SHELL", "/gluetun-entrypoint healthcheck"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    restart: always
+    volumes:
+      - ./:/config
+      - /srv:/data # /data/downloads ! in qBittorrent
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: "Europe/Tallinn"
+      WEBUI_PORT: 6011
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sSf google.com > /dev/null || exit 1"]
+      interval: 60m
+      timeout: 5m
+      retries: 3
+#    command: >
+#      sh -c "
+#      # Add cron job to persistent config
+#      echo '*/5 * * * * /config/mam-script/update_ip >> /config/mam-script.log 2>&1' > /config/crontab &&
+#      # Load cron jobs
+#      crontab /config/crontab &&
+#      # Start cron in background
+#      crond -f &
+#      # Pass execution back to original entrypoint (s6-overlay)
+#      exec /init"

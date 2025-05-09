@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сколько за рыбу?</title>
+    <style>
+        body {
+            color: white;
+            background-color: black;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+        }
+        input {
+            background-color: rgb(20, 20, 20);
+            color: lightgrey;
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+        }
+        .result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Сколько за рыбу?</h1>
+        <label for="initSum">Enter the initial sum:</label>
+        <input type="number" id="initSum" placeholder="Initial Sum">
+        <label for="ownPercentage">Enter the own percentage (0-100):</label>
+        <input type="number" id="ownPercentage" placeholder="Own Percentage">
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('initSum').addEventListener('input', calculate);
+        document.getElementById('ownPercentage').addEventListener('input', calculate);
+
+        function calculate() {
+            const initSum = parseFloat(document.getElementById('initSum').value);
+            let ownPercentage = parseFloat(document.getElementById('ownPercentage').value);
+
+            if (isNaN(initSum) || isNaN(ownPercentage) || ownPercentage < 0 || ownPercentage > 100) {
+                document.getElementById('result').innerHTML = '<p>Please enter valid values.</p>';
+                return;
+            }
+
+            const cut = 20;
+            const feePercentage = 3;
+
+            const userExpense = initSum + (initSum * ownPercentage / 100);
+            const userProfit = userExpense - (initSum * cut / 100);
+            const ourProfit = userExpense - (userExpense * feePercentage / 100) - userProfit;
+
+            document.getElementById('result').innerHTML = `
+                <p>Init summa: ${initSum}</p>
+                <p>init koos protsendiga: ${userExpense}</p>
+                <p>Saab tagasi: ${userProfit}</p>
+                <p>Profit to scammers: ${ourProfit}</p>
+            `;
+        }
+    </script>
+</body>
+</html>

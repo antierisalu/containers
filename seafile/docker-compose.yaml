@@ -1,0 +1,68 @@
+services:
+
+  db:
+    image: mariadb:10.11
+    container_name: seafile-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${SEAFILE_MYSQL_PW}  # Requested, set the root's password of MySQL service.
+      - MYSQL_LOG_CONSOLE=true
+      - MARIADB_AUTO_UPGRADE=1
+
+    volumes:
+      - /srv/db:/var/lib/mysql   # Requested, specifies the path to Seafile data persistent
+    networks:
+      - seafile-net
+    restart: unless-stopped
+
+  memcached:
+    image: memcached:1.6.18-alpine
+    container_name: seafile-memcached
+    entrypoint: memcached -m 256
+    networks:
+      - seafile-net
+    restart: unless-stopped
+
+  seafile:
+    ports:
+      - "8003:80"
+    image: seafileltd/seafile-mc:12.0-latest
+    container_name: seafile
+    volumes:
+      - /srv/seafile_data:/shared   # Requested, specifies the path to Seafile data persistent store.
+    environment:
+      - DB_HOST=${SEAFILE_MYSQL_HOST}
+      - DB_USER=${SEAFILE_DB_USER}
+      - DB_PASSWORD=${SEAFILE_MYSQL_PW}
+      - DB_ROOT_PASSWD=${SEAFILE_MYSQL_PW}
+
+      # - SEAFILE_ADMIN_EMAIL=${SEAFILE_ADMIN_EMAIL}
+      # - SEAFILE_ADMIN_PASSWORD=${SEAFILE_ADMIN_PW}
+
+      - SEAFILE_MYSQL_DB_NAME=seafile_db
+      - SEAFILE_MYSQL_DB_CCNET_DB_NAME=ccnet_db
+      - SEAFILE_MYSQL_DB_SEAFILE_DB_NAME=seafile_db
+      - SEAFILE_MYSQL_DB_SEAHUB_DB_NAME=seahub_db
+
+      - SEAFILE_MYSQL_DB_PASSWORD=${SEAFILE_MYSQL_PW}
+
+      - TIME_ZONE=Europe/Tallinn
+      - SEAFILE_SERVER_LETSENCRYPT=false
+      - JWT_PRIVATE_KEY=${SEAFILE_JWT_PRIVATE_KEY}
+
+      - SEAFILE_SERVER_HOSTNAME=${SEAFILE_HOSTNAME}
+      - SEAFILE_SERVER_PROTOCOL=https
+
+#      - SEAFILE_SERVER_HOSTNAME=192.168.2.3:8003
+#      - SEAFILE_SERVER_PROTOCOL=http
+
+    depends_on:
+      - db
+      - memcached
+    networks:
+      - seafile-net
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "ls /opt/seafile/seafile-data/ > /dev/null || exit 1"]
+      interval: 60m
+      timeout: 1m
+      retries: 3

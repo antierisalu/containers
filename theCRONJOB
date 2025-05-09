@@ -1,0 +1,1 @@
+*/10 * * * * docker exec "qbittorrent" "/config/mam-script/update_ip" >> /tmp/mam-script.log 2>&1

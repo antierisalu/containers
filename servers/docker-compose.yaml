@@ -1,0 +1,31 @@
+services:
+
+  kala-server:
+    image: nginx:latest
+    container_name: kala-server
+    volumes:
+      - ./kala:/usr/share/nginx/html
+    networks:
+      - servers-net
+    restart: unless-stopped
+
+  never-server:
+    image: nginx:latest
+    container_name: never-server
+    volumes:
+      - ./never:/usr/share/nginx/html
+    networks:
+      - servers-net
+    restart: unless-stopped
+
+  yoga-server:
+    container_name: yoga
+    build:
+      context: ./yoga/js/.
+      dockerfile: ./Dockerfile
+    image: yoga-server:js
+    networks:
+      - servers-net
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
