@@ -23,3 +23,5 @@ services:
       interval: 60m
       timeout: 10s
       retries: 2
+    environment:
+      - TZ=Europe/Tallinn
