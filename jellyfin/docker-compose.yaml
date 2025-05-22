@@ -11,9 +11,7 @@ services:
         target: /media
     networks:
       - media-net
-    # expose:
-    #  - 8096
-    ports: # for local access
+    ports: # for local access and expose for nginx only
       - 8096:8096
     restart: always
     group_add:
