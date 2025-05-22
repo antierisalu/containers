@@ -17,98 +17,102 @@ async function extractPlaylistIdAndVideoUrl(channelUrl, playlistTitle, videoInde
         ]
     });
 
-    const page = await browser.newPage();
-
-    // Navigate to the channel's feature page
-    await page.goto(channelUrl, { waitUntil: 'networkidle2' });
-
-    // Log the page title to confirm the page has loaded
-    const pageTitle = await page.title();
-    console.log(`Page Title: ${pageTitle}`);
-
-    // Handle cookie consent popup
     try {
-        await page.waitForSelector('button[aria-label="Accept all"]', { timeout: 5000 });
-        const consentButton = await page.$('button[aria-label="Accept all"]');
-        if (consentButton) {
-            await consentButton.click();
-            await page.waitForNavigation({ waitUntil: 'networkidle2' });
-            console.log('Cookie consent accepted.');
-        } else {
-            console.log('Cookie consent button not found.');
-        }
-    } catch (error) {
-        console.error('Cookie consent not found or failed to accept:', error);
-    }
 
-    // Wait for the page to load and the playlist links to be available
-    try {
-        await page.waitForSelector('a[href*="/playlist?list="]', { timeout: 10000 }); // Increased timeout to 60 seconds
-    } catch (error) {
-        console.error('Selector not found within the timeout period:', error);
+        const page = await browser.newPage();
 
-        // Log the page content to the console for debugging
-        const pageContent = await page.content();
-        console.log(pageContent);
+        // Navigate to the channel's feature page
+        await page.goto(channelUrl, { waitUntil: 'networkidle2' });
 
-        await browser.close();
-        return;
-    }
+        // Log the page title to confirm the page has loaded
+        const pageTitle = await page.title();
+        console.log(`Page Title: ${pageTitle}`);
 
-    // Extract the playlist ID with the specified title
-    const playlistData = await page.evaluate((targetTitle) => {
-        const playlists = document.querySelectorAll('a[href*="/playlist?list="]');
-        for (const playlist of playlists) {
-            const titleElement = playlist.querySelector('span#title');
-            if (titleElement && titleElement.textContent.trim().includes(targetTitle)) {
-                const playlistId = playlist.href.split('/playlist?list=')[1];
-                return { title: titleElement.textContent.trim(), id: playlistId };
-            }
-        }
-        return null;
-    }, playlistTitle);
-
-    if (playlistData) {
-        const playlistUrl = `https://www.youtube.com/playlist?list=${playlistData.id}`;
-        console.log(`Playlist URL: ${playlistUrl}`);
-        console.log(`Playlist Title: ${playlistData.title}`);
-
-        // Navigate to the playlist page
-        await page.goto(playlistUrl, { waitUntil: 'networkidle2' });
-
-        // Wait for the video links to be available
+        // Handle cookie consent popup
         try {
-            await page.waitForSelector('a#video-title', { timeout: 5000 }); // Increased timeout to 60 seconds
+            await page.waitForSelector('button[aria-label="Accept all"]', { timeout: 5000 });
+            const consentButton = await page.$('button[aria-label="Accept all"]');
+            if (consentButton) {
+                await consentButton.click();
+                await page.waitForNavigation({ waitUntil: 'networkidle2' });
+                console.log('Cookie consent accepted.');
+            } else {
+                console.log('Cookie consent button not found.');
+            }
         } catch (error) {
-            console.error('Video links not found within the timeout period:', error);
+            console.error('Cookie consent not found or failed to accept:', error);
+        }
+
+        // Wait for the page to load and the playlist links to be available
+        try {
+            await page.waitForSelector('a[href*="/playlist?list="]', { timeout: 10000 }); // Increased timeout to 60 seconds
+        } catch (error) {
+            console.error('Selector not found within the timeout period:', error);
+
+            // Log the page content to the console for debugging
+            const pageContent = await page.content();
+            console.log(pageContent);
 
             await browser.close();
             return;
         }
 
-        // Extract the URL of the specified video index
-        const videoUrl = await page.evaluate((index) => {
-            const videoLinks = document.querySelectorAll('a#video-title');
-            if (index < videoLinks.length) {
-                const videoLink = videoLinks[index];
-                const videoHref = videoLink.href;
-                return videoHref;
+        // Extract the playlist ID with the specified title
+        const playlistData = await page.evaluate((targetTitle) => {
+            const playlists = document.querySelectorAll('a[href*="/playlist?list="]');
+            for (const playlist of playlists) {
+                const titleElement = playlist.querySelector('span#title');
+                if (titleElement && titleElement.textContent.trim().includes(targetTitle)) {
+                    const playlistId = playlist.href.split('/playlist?list=')[1];
+                    return { title: titleElement.textContent.trim(), id: playlistId };
+                }
             }
             return null;
-        }, videoIndex - 1); // - 1 because array indices are 0-based
+        }, playlistTitle);
 
-        if (videoUrl) {
-            console.log(`URL of the ${videoIndex}th video: ${videoUrl}`);
-            return videoUrl;
+        if (playlistData) {
+            const playlistUrl = `https://www.youtube.com/playlist?list=${playlistData.id}`;
+            console.log(`Playlist URL: ${playlistUrl}`);
+            console.log(`Playlist Title: ${playlistData.title}`);
+
+            // Navigate to the playlist page
+            await page.goto(playlistUrl, { waitUntil: 'networkidle2' });
+
+            // Wait for the video links to be available
+            try {
+                await page.waitForSelector('a#video-title', { timeout: 5000 }); // Increased timeout to 60 seconds
+            } catch (error) {
+                console.error('Video links not found within the timeout period:', error);
+
+                await browser.close();
+                return;
+            }
+
+            // Extract the URL of the specified video index
+            const videoUrl = await page.evaluate((index) => {
+                const videoLinks = document.querySelectorAll('a#video-title');
+                if (index < videoLinks.length) {
+                    const videoLink = videoLinks[index];
+                    const videoHref = videoLink.href;
+                    return videoHref;
+                }
+                return null;
+            }, videoIndex - 1); // - 1 because array indices are 0-based
+
+            if (videoUrl) {
+                console.log(`URL of the ${videoIndex}th video: ${videoUrl}`);
+                return videoUrl;
+            } else {
+                console.log('Video not found.');
+            }
         } else {
-            console.log('Video not found.');
+            console.log('Playlist not found.');
         }
-    } else {
-        console.log('Playlist not found.');
+
+    } finally {
+    await browser.close();
     }
 
-    // Close the browser
-    await browser.close();
 }
 
 async function updateCachedVideoUrl() {
