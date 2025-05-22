@@ -2,42 +2,26 @@
 # Loads default set of integrations. Do not remove.
 default_config:
 
-# Load frontend themes from the themes folder
-frontend:
-  themes: !include_dir_merge_named themes
-
 automation: !include automations.yaml
 script: !include scripts.yaml
-scene: !include scenes.yaml
 
 http:
   use_x_forwarded_for: true
   trusted_proxies:
     - 172.22.0.0/16
 
-#yeelight: !include yeelight_devices.yaml
-
-wake_on_lan:
-  mac: ce:8a:89:4d:72:66
-  broadcast_address: 192.168.2.11
-
-switch:
-  - platform: wake_on_lan
-    mac: ce:8a:89:4d:72:66
-    host: 192.168.2.11
-
 # Watch group
 group:
   garmin:
     name: Garmin
     entities:
-      - script.lights_out
-      - script.corridor_toggle
-      - scene.new_scene # this is casual scene
-      - script.kitchen_toggle
-      - script.everything_on
+      - script.all_lights_off
+      - script.all_lights_on
+      - script.corridor_lights_toggle
+      - script.casual
+      - script.kitchen_lights_toggle
+      - script.stop_cleaning
       - script.start_cleaning
-      - script.stop_vaccuming
 
 aio_energy_management:
   cheapest_hours:

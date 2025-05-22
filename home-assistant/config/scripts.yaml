@@ -1,0 +1,90 @@
+casual:
+  alias: Casual Lights
+  icon: mdi:led-strip
+  mode: single
+  sequence:
+  - service: script.all_lights_off
+  - service: light.turn_on
+    target:
+      entity_id: light.yeelink_strip2_6858_switch_status
+  - service: light.turn_on
+    target:
+      entity_id: light.yeelink_monob_7af3_switch_status
+      
+corridor_lights_toggle:
+  alias: Toggle Corridor Lights
+  icon: mdi:door
+  mode: single
+  sequence:
+  - service: light.toggle
+    target:
+      area_id: corridor
+
+kitchen_lights_toggle:
+  alias: Toggle Kitchen Lights
+  icon: mdi:fridge-outline
+  mode: single
+  sequence:
+  - service: light.toggle
+    target:
+      area_id: kitchen
+
+all_lights_on:
+  alias: Lights On
+  icon: mdi:lightbulb-group
+  mode: single
+  sequence:
+  - service: light.turn_on
+    target:
+      area_id: corridor
+  - service: light.turn_on
+    target:
+      area_id: kitchen
+  - service: light.turn_on
+    target:
+      area_id: living_room
+  - service: light.turn_on
+    target:
+      area_id: bedroom
+  - service: light.turn_on
+    target:
+      area_id: toilet
+
+all_lights_off:
+  alias: Lights Off
+  icon: mdi:lightbulb-group-off
+  mode: single
+  sequence:
+  - service: light.turn_off
+    target:
+      area_id: corridor
+  - service: light.turn_off
+    target:
+      area_id: kitchen
+  - service: light.turn_off
+    target:
+      area_id: living_room
+  - service: light.turn_off
+    target:
+      area_id: bedroom
+  - service: light.turn_off
+    target:
+      area_id: toilet
+
+start_cleaning:
+  alias: Start Cleaning
+  icon: mdi:robot-vacuum
+  mode: single
+  sequence:
+    - action: vacuum.start
+      target:
+        entity_id: vacuum.roborock_s5_1f7f_robot_cleaner
+
+stop_cleaning:
+  alias: Stop Cleaning
+  icon: mdi:robot-vacuum-off
+  mode: single
+  sequence:
+    - action: vacuum.return_to_base
+      target:
+        entity_id: vacuum.roborock_s5_1f7f_robot_cleaner

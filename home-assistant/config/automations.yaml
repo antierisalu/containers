@@ -1,0 +1,34 @@
+- id: '1747922610752'
+  alias: Lights off when leaving home
+  description: ''
+  triggers:
+  - device_id: ae1b4cd4e60c028fe57529916cb4ced7
+    domain: device_tracker
+    entity_id: d6375d65b159deca65795be1a8b8c8b9
+    type: leaves
+    trigger: device
+    zone: zone.home
+  conditions: []
+  actions:
+  - action: script.all_lights_off
+    metadata: {}
+    data: {}
+  mode: single
+- id: '1747926385298'
+  alias: Casual when at home and sun sets
+  description: Turns table light and led 20 minutes prior to sunset
+  triggers:
+  - trigger: sun
+    event: sunset
+    offset: -00:20:00
+  conditions:
+  - condition: zone
+    entity_id: person.jellyza
+    zone: zone.home
+  actions:
+  - action: scene.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: scene.new_scene
+  mode: single
