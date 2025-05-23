@@ -20,6 +20,8 @@ corridor_lights_toggle:
     target:
       area_id: corridor
 
+
+
 kitchen_lights_toggle:
   alias: Toggle Kitchen Lights
   icon: mdi:fridge-outline

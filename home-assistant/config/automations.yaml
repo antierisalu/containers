@@ -2,12 +2,10 @@
   alias: Lights off when leaving home
   description: ''
   triggers:
-  - device_id: ae1b4cd4e60c028fe57529916cb4ced7
-    domain: device_tracker
-    entity_id: d6375d65b159deca65795be1a8b8c8b9
-    type: leaves
-    trigger: device
+  - trigger: zone
+    entity_id: person.jellyza
     zone: zone.home
+    event: leave
   conditions: []
   actions:
   - action: script.all_lights_off
@@ -26,9 +24,64 @@
     entity_id: person.jellyza
     zone: zone.home
   actions:
-  - action: scene.turn_on
+  - action: script.casual
     metadata: {}
     data: {}
+  mode: single
+- id: '1748028543653'
+  alias: Toggle heater with cheapest hours
+  description: ''
+  triggers:
+  - entity_id: binary_sensor.my_cheapest_hours
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.my_cheapest_hours
+        state: 'on'
+      sequence:
+      - target:
+          device_id: c5f79adc7da164abc7e8852ce8bc7376
+        action: switch.turn_on
+        data: {}
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.my_cheapest_hours
+        state: 'off'
+      sequence:
+      - action: switch.turn_off
+        target:
+          device_id:
+          - c5f79adc7da164abc7e8852ce8bc7376
+        data: {}
+  mode: single
+- id: '1748030075871'
+  alias: Entry lights and casual upon arriving
+  description: ''
+  trigger:
+  - platform: zone
+    entity_id: person.jellyza
+    zone: zone.home
+    event: enter
+  condition: []
+  action:
+  - service: light.turn_on
+    data:
+      brightness_pct: 100
     target:
-      entity_id: scene.new_scene
+      area_id: corridor
+  - choose:
+    - conditions:
+      - condition: sun
+        before: sunrise
+        after: sunset
+        after_offset: -00:20:00
+      sequence:
+      - service: script.casual
+  - delay: 00:08:00
+  - service: light.turn_off
+    target:
+      area_id: corridor
   mode: single
