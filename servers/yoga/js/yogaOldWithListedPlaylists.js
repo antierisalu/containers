@@ -6,7 +6,7 @@ const PORT = 8065;
 
 const app = express();
 
-const keyFile = path.join(__dirname, 'alpine-realm-381711-c882a05f7e41.json');
+const keyFile = path.join(__dirname, 'key.json');
 
 async function getVideoUrl() {
   const auth = new google.auth.GoogleAuth({
