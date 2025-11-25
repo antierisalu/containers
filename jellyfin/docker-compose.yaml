@@ -5,9 +5,10 @@ services:
     container_name: jellyfin
     volumes:
       - ./config:/config
-      - ./cache:/cache
+      # - ./cache:/cache # 
+      - /srv/jellyfin:/cache
       - type: bind
-        source: /srv/
+        source: /srv/nas/
         target: /media
     networks:
       - media-net

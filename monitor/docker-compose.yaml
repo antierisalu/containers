@@ -28,6 +28,12 @@ services:
       - monitoring-net
     volumes:
       - ./grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_LOG_LEVEL=warn
+      - GF_LIVE_ENABLED=false
+      - GF_LOG_FILTERS=context:error
     user: "1000"
 
   node-exporter:
@@ -41,15 +47,17 @@ services:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
+      - /var/lib/node_exporter/textfile_collector:/var/lib/node_exporter/textfile_collector:ro
     restart: unless-stopped
     command:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
+      - '--collector.textfile.directory=/var/lib/node_exporter/textfile_collector'
       - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|etc)($$|/)|^/host/(sys|proc|dev|etc)($$|/)'
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
+    image: gcr.io/cadvisor/cadvisor:v0.52.0
     container_name: cadvisor
     expose:
       - 8080
@@ -62,3 +70,29 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
 
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki
+    expose:
+      - 3100
+    restart: unless-stopped
+    networks:
+      - monitoring-net
+    volumes:
+      - ./loki/loki.yml:/etc/loki/local-config.yaml
+      - ./loki/data:/tmp/loki
+    user: "1000"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: promtail
+    restart: unless-stopped
+    networks:
+      - monitoring-net
+    volumes:
+      - ./promtail/promtail.yml:/etc/promtail/config.yml
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml

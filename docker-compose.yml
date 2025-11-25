@@ -16,6 +16,7 @@ services:
         - assistant-net
         - servers-net
         - deposito-net
+        - cloud-net
     extra_hosts:
         - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -32,9 +33,10 @@ services:
 
   portainer:
     container_name: portainer
-    image: portainer/portainer-ce:alpine
-    command: -H unix:///var/run/docker.sock
+    image: portainer/portainer-ce:2.21.0-alpine
     restart: unless-stopped
+    ports:
+      - "9000:9000"
     environment:
       - VIRTUAL_HOST=${PORTAINER_HOSTNAME}
       - VIRTUAL_PORT=9000
@@ -47,10 +49,32 @@ services:
   watchtower:
     container_name: watchtower
     restart: unless-stopped
-    image: containrrr/watchtower
+    image: nickfedor/watchtower:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --schedule "4 0 * * 4" --cleanup
+    command: --schedule "0 5 4 * * 2" --cleanup
+
+  cloudflare-root:
+    container_name: cloudflare-root
+    image: oznu/cloudflare-ddns:latest
+    restart: unless-stopped
+    environment:
+      - API_KEY=${CLOUDFLARE_API_KEY}
+      - ZONE=${CLOUDFLARE_ZONE}
+#      - SUBDOMAIN=@
+      - PROXIED=true
+      - TZ=€{TIMEZONE}
+
+  cloudflare-ssh:
+    container_name: cloudflare-ssh
+    image: oznu/cloudflare-ddns:latest
+    restart: unless-stopped
+    environment:
+      - API_KEY=${CLOUDFLARE_API_KEY}
+      - ZONE=${CLOUDFLARE_ZONE}
+      - SUBDOMAIN=ssh
+      - PROXIED=false
+      - TZ=€{TIMEZONE}
 
 networks:
 
@@ -58,6 +82,10 @@ networks:
     external: true
 
   seafile-net:
+    external: true
+    # internal: true
+  
+  cloud-net:
     external: true
     # internal: true
 
@@ -90,4 +118,6 @@ include:
 
   - servers/docker-compose.yaml
 
-#  - deposito/docker-compose.yaml
+  - pihole/docker-compose.yaml
+
+  - immich/docker-compose.yml
