@@ -1,14 +1,5 @@
 services:
 
-  kala-server:
-    image: nginx:latest
-    container_name: kala-server
-    volumes:
-      - ./kala:/usr/share/nginx/html
-    networks:
-      - servers-net
-    restart: unless-stopped
-
   never-server:
     image: nginx:latest
     container_name: never-server
