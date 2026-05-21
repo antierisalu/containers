@@ -1,6 +1,6 @@
 services:
   gluetun:
-    image: qmcgaw/gluetun
+    image: qmcgaw/gluetun:latest
     container_name: gluetun
     restart: always
     ports:
@@ -11,16 +11,18 @@ services:
         - NET_ADMIN
     devices:
         - /dev/net/tun
-    volumes:
-        - ./gluetun:/gluetun
     environment:
-        - VPN_SERVICE_PROVIDER=${WG_PROVIDER}
-        - VPN_TYPE=${WG_TYPE}
-        - WIREGUARD_PRIVATE_KEY=${WG_PRIVATE_KEY}
-        - WIREGUARD_ADDRESSES=${WG_ADDRESSES}
-        - WIREGUARD_PRESHARED_KEY=${WG_PRESHARED_KEY}
-        - SERVER_REGIONS=${WG_REGIONS}
         - TZ="${TIMEZONE}"
+        - VPN_SERVICE_PROVIDER="${W_PROVIDER}"
+        - VPN_TYPE="${W_TYPE}"
+
+        - WIREGUARD_ENDPOINT_IP="${W_ENDPOINT_IP}"
+        - WIREGUARD_ENDPOINT_PORT=443
+        - WIREGUARD_PUBLIC_KEY="${W_PUBLIC_KEY}"
+        - WIREGUARD_PRIVATE_KEY="${W_PRIVATE_KEY}"
+        - WIREGUARD_ADDRESSES="${W_ADDRESSES}"
+        - WIREGUARD_PRESHARED_KEY="${W_PRESHARED_KEY}"
+
     healthcheck:
       test: ["CMD-SHELL", "/gluetun-entrypoint healthcheck"]
       interval: 5m
@@ -28,7 +30,7 @@ services:
       retries: 3
 
   qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:latest
+    image: lscr.io/linuxserver/qbittorrent:5.1.4
     container_name: qbittorrent
     network_mode: "service:gluetun"
     restart: always
