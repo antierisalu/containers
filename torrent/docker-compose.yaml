@@ -48,13 +48,19 @@ services:
       interval: 5m
       timeout: 5m
       retries: 3
-#    command: >
-#      sh -c "
-#      # Add cron job to persistent config
-#      echo '*/5 * * * * /config/mam-script/update_ip >> /config/mam-script.log 2>&1' > /config/crontab &&
-#      # Load cron jobs
-#      crontab /config/crontab &&
-#      # Start cron in background
-#      crond -f &
-#      # Pass execution back to original entrypoint (s6-overlay)
-#      exec /init"
+
+  mousehole:
+    container_name: mousehole
+    image: tmmrtn/mousehole:latest
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy # wait for the VPN tunnel before attaching
+    environment:
+      TZ: "${TIMEZONE}" # Set to your timezone for localization
+      MOUSEHOLE_AUTH_PASSWORD: "${MS_PASSWORD}"
+      MOUSEHOLE_AUTH_TOKEN: "${MS_TOKEN}"
+    volumes:
+      # persist cookie data across container restarts
+      - "./mousehole:/var/lib/mousehole"
+    restart: unless-stopped
